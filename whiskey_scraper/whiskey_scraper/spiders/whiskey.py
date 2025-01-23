@@ -7,6 +7,9 @@ from scrapy_playwright.page import PageMethod
 class WhiskeySpider(scrapy.Spider):
     name= "whiskey"
 
+    def log_error(self, failure):
+        self.logger.error(repr(failure))
+
     def start_requests(self):
         yield scrapy.Request("https://bottleraiders.com/archive/?variety=whiskey", meta={"playwright": True}, callback=self.scrape_page_count)
 
@@ -19,11 +22,11 @@ class WhiskeySpider(scrapy.Spider):
         start_urls = ["https://bottleraiders.com/archive/?pg=" + str(x) + "&variety=whiskey" for x in range(1, int(pagination_total))]
 
         for url in start_urls :
-            yield scrapy.Request(url, meta={"playwright": True}, callback=self.parse)
+            yield scrapy.Request(url, meta={"playwright": True}, callback=self.parse, errback=self.log_error)
 
     def parse(self, response):
         whiskey_links = response.css('table#table tbody tr.o-archive__table-row a')
-        yield from response.follow_all(whiskey_links, self.parse_whiskey)
+        yield from response.follow_all(whiskey_links, callback=self.parse_whiskey, errback=self.log_error)
 
     def parse_whiskey(self, response):
         i = ItemLoader(item=WhiskeyItem(), selector=response)
