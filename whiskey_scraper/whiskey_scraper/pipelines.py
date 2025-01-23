@@ -44,5 +44,3 @@ class WhiskeyScraperPipeline:
     def compute_item_id(self, item):
         name = item["name"]
         return hashlib.sha256(name.encode("utf-8")).hexdigest()
-
-    
